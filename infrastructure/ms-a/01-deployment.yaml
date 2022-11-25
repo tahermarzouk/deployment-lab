@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-a
+  labels:
+    app: ms-a
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: ms-a
+  template:
+    metadata:
+      labels:
+        app: ms-a
+    spec:
+      serviceAccountName: build-robot
+      initContainers:
+        - name: setup-files
+          image: alpine:latest
+          command: ["sh", "-c", "echo hello from init > /init-data/hello.txt"]
+          volumeMounts:
+          - name: init-volume
+            mountPath: "/init-data"
+      containers:
+      - name: ms-a
+        image: tahermarzouk/ms-a
+        # image: wassimkallel/ms-a-insat
+        # imagePullPolicy: Always
+        # livenessProbe: 
+        #   httpGet:
+        #     path: /healthz
+        #     port: 3000
+        ports:
+        - containerPort: 3000
+          name: express-port
+        env:
+        # Define the environment variable
+        # - name: GL5
+        #   valueFrom:
+        #     configMapKeyRef:
+        #       name: my-config           # The ConfigMap this value comes from.
+        #       key: key1 # The key to fetch.
+          # - name: MSB_HOST
+          #   value: "ms-b-service.ms-b-ns"
+          # - name: MSB_PORT
+          #   value: "80" 
+        envFrom:
+          - configMapRef: 
+              name: my-config 
+        volumeMounts:
+          - name: init-volume
+            readOnly: true
+            mountPath: "/init-data"
+          - name: config-test
+            mountPath: "/configuration"
+            readOnly: true
+          - name: mounted-volume
+            mountPath: "/gl5data"
+      volumes:
+      - name: init-volume
+        emptyDir: {}
+      # You set volumes at the Pod level, then mount them into containers inside that Pod
+      - name: config-test
+        configMap:
+          # Provide the name of the ConfigMap you want to mount.
+          name: my-config
+          # An array of keys from the ConfigMap to create as files
+          items:
+          - key: "key2"
+            path: "test"  # le path est /configuration/test
+      - name: mounted-volume
+        persistentVolumeClaim:
+          claimName: block-pvc-managed

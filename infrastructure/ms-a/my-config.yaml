@@ -1,0 +1,10 @@
+apiVersion: v1
+data:
+  key1: config1
+  key2: config2
+  MSB_HOST: ms-b-service.ms-b-ns
+  MSB_PORT: "80" 
+kind: ConfigMap
+metadata:
+  name: my-config
+ 
